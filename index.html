@@ -267,7 +267,12 @@ form.addEventListener('submit', async (ev) => {
     const res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, category, question }),
+      body: JSON.stringify({
+        name,
+        category,
+        question,
+        visitorToken: getVisitorToken(),
+      }),
     });
 
     const text = await res.text();
