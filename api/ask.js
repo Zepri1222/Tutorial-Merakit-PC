@@ -19,12 +19,17 @@ export default async function handler(req, res) {
     const cleanQuestion = String(body.question ?? '').trim();
     const cleanName = String(body.name ?? '').trim().slice(0, 60) || 'Pengunjung';
     const cleanCategory = String(body.category ?? '').trim().slice(0, 60) || 'Lainnya';
+    const visitorToken = String(body.visitorToken ?? '').trim();
+
+    if (!/^[a-zA-Z0-9-]{16,64}$/.test(visitorToken)) {
+      return res.status(400).json({ error: 'Token pengunjung tidak valid. Muat ulang halaman.' });
+    }
 
     if (cleanQuestion.length < 8 || cleanQuestion.length > 2000) {
       return res.status(400).json({ error: 'Pertanyaan harus 8-2000 karakter.' });
     }
 
-    // 1. Simpan pertanyaan ke Supabase
+    // 1. Simpan pertanyaan ke Supabase beserta token pengunjung
     const insertRes = await fetch(`${base}/rest/v1/pc_questions`, {
       method: 'POST',
       headers: {
@@ -37,6 +42,7 @@ export default async function handler(req, res) {
         name: cleanName,
         category: cleanCategory,
         question: cleanQuestion,
+        visitor_token: visitorToken,
       }),
     });
 
@@ -50,7 +56,7 @@ export default async function handler(req, res) {
 
     const [row] = await insertRes.json();
 
-    // 2. Kirim notifikasi ke channel Discord
+    // 2. Kirim notifikasi ke channel Discord (admin tetap melihat semua pertanyaan)
     const msgRes = await fetch(`${webhook}?wait=true`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,7 +68,7 @@ export default async function handler(req, res) {
       }),
     });
 
-    // 3. Simpan ID pesan Discord (jika berhasil dikirim)
+    // 3. Simpan ID pesan Discord
     if (msgRes.ok) {
       const msg = await msgRes.json();
       await fetch(`${base}/rest/v1/pc_questions?id=eq.${row.id}`, {
