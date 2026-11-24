@@ -1,1 +1,0 @@
-{"name":"tutorial-merakit-pc-discord-qa","private":true,"type":"module","scripts":{"register-command":"node scripts/register-command.mjs"},"dependencies":{"@supabase/supabase-js":"^2.49.0","dotenv":"^16.4.7"}}
