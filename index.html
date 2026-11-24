@@ -32,7 +32,7 @@
 <div class="wrap layout">
 <aside class="sidebar">
 <p class="side-title">DAFTAR ISI</p><nav class="side">
-<a href="#persiapan">01. Persiapan</a><a href="#komponen">02. Kenali komponen</a><a href="#kompatibilitas">03. Cek kompatibilitas</a><a href="#alat">04. Alat & keselamatan</a><a href="#perakitan">05. Langkah merakit</a><a href="#kabel">06. Sambungan kabel</a><a href="#boot">07. Tes pertama</a><a href="#bios">08. Pengaturan BIOS</a><a href="#os">09. Instalasi OS</a><a href="#driver">10. Driver & pengujian</a><a href="#masalah">11. Troubleshooting</a><a href="#tanya">12. Tanya admin</a><a href="#admin">13. Panel admin</a><a href="#checklist">Checklist akhir</a><a href="#faq">FAQ</a>
+<a href="#persiapan">01. Persiapan</a><a href="#komponen">02. Kenali komponen</a><a href="#kompatibilitas">03. Cek kompatibilitas</a><a href="#alat">04. Alat & keselamatan</a><a href="#perakitan">05. Langkah merakit</a><a href="#kabel">06. Sambungan kabel</a><a href="#boot">07. Tes pertama</a><a href="#bios">08. Pengaturan BIOS</a><a href="#os">09. Instalasi OS</a><a href="#driver">10. Driver & pengujian</a><a href="#masalah">11. Troubleshooting</a><a href="#tanya">12. Tanya admin</a><a href="#checklist">Checklist akhir</a><a href="#faq">FAQ</a>
 </nav><div class="progressbox"><strong>Progress belajar</strong><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div><small id="progressText">0 dari 15 checklist selesai</small></div>
 </aside>
 <div class="content">
@@ -163,21 +163,10 @@
   <button class="btn" id="sendQuestion" type="submit">Kirim pertanyaan →</button>
   <p id="questionFeedback" class="muted" role="status" aria-live="polite" style="margin-top:12px">Pertanyaan akan dikirim ke database setelah Supabase dikonfigurasi.</p>
 </form>
+<div style="margin-top:26px"><h3>Jawaban admin</h3><p class="muted">Jawaban admin melalui Discord akan muncul di sini.</p><div id="publicAnswers"><p class="muted">Memuat jawaban...</p></div></div>
+
 </section>
-<section class="section" id="admin"><div class="section-head"><div class="number">ADM</div><div><h2>Panel Admin</h2><p>Halaman khusus pengelola untuk melihat pertanyaan yang masuk.</p></div></div>
-<div id="adminLoginArea">
-  <p class="muted">Panel ini hanya untuk pemilik website. Masuk memakai akun Google yang sudah didaftarkan sebagai admin.</p>
-  <button class="btn" id="googleLogin" type="button">Masuk dengan Google</button>
-  <p id="adminFeedback" class="muted" role="status" aria-live="polite"></p>
-</div>
-<div id="adminDashboard" hidden>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-    <strong>Daftar pertanyaan masuk</strong>
-    <div style="display:flex;gap:8px"><button class="btn secondary" id="refreshQuestions" type="button">Muat ulang</button><button class="btn secondary" id="adminLogout" type="button">Keluar dari Google</button></div>
-  </div>
-  <div id="adminQuestions" style="margin-top:16px"><p class="muted">Belum ada data ditampilkan.</p></div>
-</div>
-</section>
+
 
 <section class="section faq" id="faq"><div class="section-head"><div class="number">?</div><div><h2>Pertanyaan yang sering ditanyakan</h2><p>Jawaban singkat untuk pemula.</p></div></div>
 <details><summary>Apakah PC bisa menyala tanpa VGA card?</summary><p>Bisa jika CPU memiliki grafis terintegrasi dan motherboard menyediakan output display. Jika CPU tidak memiliki iGPU, biasanya diperlukan kartu grafis terpisah.</p></details>
@@ -206,180 +195,40 @@ sections.forEach(s=>observer.observe(s));
 </script>
 
 <script type="module">
-/*
-  KONFIGURASI SUPABASE:
-  Isi SUPABASE_URL dan SUPABASE_ANON_KEY dengan Project URL dan anon/publishable key
-  dari Supabase Dashboard > Project Settings > API.
-  Jangan pernah menaruh service_role/secret key di file HTML.
-*/
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-const SUPABASE_URL = 'https://xqqmilgtikmpgkdbfasz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_hachrI0w1Kk2r8glkjMoUg_bz2fJtXF';
-const configured = SUPABASE_URL.startsWith('https://') &&
-  !SUPABASE_URL.includes('ISI_') &&
-  !SUPABASE_ANON_KEY.includes('ISI_') &&
-  SUPABASE_ANON_KEY.length > 20;
-
-const questionForm = document.getElementById('questionForm');
-const questionFeedback = document.getElementById('questionFeedback');
-const sendQuestion = document.getElementById('sendQuestion');
-const adminFeedback = document.getElementById('adminFeedback');
-const adminLoginArea = document.getElementById('adminLoginArea');
-const adminDashboard = document.getElementById('adminDashboard');
-const adminQuestions = document.getElementById('adminQuestions');
-
-if (!configured) {
-  questionFeedback.textContent = 'Fitur pertanyaan belum aktif. Admin perlu menghubungkan project Supabase terlebih dahulu.';
-  adminFeedback.textContent = 'Panel admin menunggu konfigurasi Supabase.';
-} else {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  questionForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const name = document.getElementById('questionName').value.trim();
-    const category = document.getElementById('questionCategory').value;
-    const question = document.getElementById('questionText').value.trim();
-
-    if (question.length < 8) {
-      questionFeedback.textContent = 'Tulis pertanyaan minimal 8 karakter.';
-      return;
-    }
-    sendQuestion.disabled = true;
-    sendQuestion.textContent = 'Mengirim...';
-    questionFeedback.textContent = 'Sedang mengirim pertanyaan...';
-
-    const { error } = await supabase.from('pc_questions').insert([{
-      name: name || 'Pengunjung',
-      category,
-      question
-    }]);
-
-    sendQuestion.disabled = false;
-    sendQuestion.textContent = 'Kirim pertanyaan →';
-
-    if (error) {
-      console.error(error);
-      questionFeedback.textContent = 'Pertanyaan belum terkirim. Periksa konfigurasi Supabase atau coba lagi nanti.';
-      return;
-    }
-    questionForm.reset();
-    questionFeedback.textContent = 'Pertanyaan berhasil dikirim! Terima kasih sudah bertanya.';
-  });
-
-  async function loadQuestions() {
-    adminQuestions.textContent = 'Memuat pertanyaan...';
-    const { data, error } = await supabase
-      .from('pc_questions')
-      .select('id, name, category, question, status, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error(error);
-      adminQuestions.textContent = 'Gagal memuat pertanyaan. Pastikan akun ini terdaftar sebagai admin dan kebijakan RLS sudah benar.';
-      return;
-    }
-    adminQuestions.replaceChildren();
-    if (!data || data.length === 0) {
-      adminQuestions.textContent = 'Belum ada pertanyaan masuk.';
-      return;
-    }
-
-    data.forEach((item) => {
-      const card = document.createElement('article');
-      card.className = 'info';
-      card.style.marginBottom = '12px';
-
-      const title = document.createElement('strong');
-      title.textContent = item.category + ' • ' + (item.name || 'Pengunjung');
-
-      const date = document.createElement('p');
-      date.textContent = new Date(item.created_at).toLocaleString('id-ID');
-
-      const body = document.createElement('p');
-      body.style.cssText = 'color:var(--text);white-space:pre-wrap;margin:10px 0';
-      body.textContent = item.question;
-
-      const status = document.createElement('p');
-      status.textContent = 'Status: ' + (item.status === 'answered' ? 'Sudah dijawab' : 'Menunggu jawaban');
-
-      const action = document.createElement('button');
-      action.className = 'btn secondary';
-      action.type = 'button';
-      action.textContent = item.status === 'answered' ? 'Tandai belum dijawab' : 'Tandai sudah dijawab';
-      action.addEventListener('click', async () => {
-        action.disabled = true;
-        const nextStatus = item.status === 'answered' ? 'new' : 'answered';
-        const { error: updateError } = await supabase
-          .from('pc_questions')
-          .update({ status: nextStatus })
-          .eq('id', item.id);
-        if (updateError) {
-          console.error(updateError);
-          adminFeedback.textContent = 'Status gagal diperbarui.';
-        } else {
-          adminFeedback.textContent = 'Status pertanyaan berhasil diperbarui.';
-          await loadQuestions();
-        }
-        action.disabled = false;
-      });
-
-      card.append(title, date, body, status, action);
-      adminQuestions.append(card);
-    });
-  }
-
-  async function updateAdminView() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      adminLoginArea.hidden = false;
-      adminDashboard.hidden = true;
-      adminFeedback.textContent = 'Masuk dengan akun Google admin untuk membuka panel.';
-      return;
-    }
-
-    // Hak admin diverifikasi dari database dan dilindungi RLS, bukan dari teks email di browser.
-    const { data: adminRecord, error } = await supabase
-      .from('pc_admins')
-      .select('user_id')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    if (error || !adminRecord) {
-      adminLoginArea.hidden = false;
-      adminDashboard.hidden = true;
-      adminFeedback.textContent = 'Akun Google ini belum terdaftar sebagai admin. Keluar, lalu gunakan akun admin yang benar.';
-      return;
-    }
-
-    adminLoginArea.hidden = true;
-    adminDashboard.hidden = false;
-    adminFeedback.textContent = 'Berhasil masuk sebagai admin.';
-    await loadQuestions();
-  }
-
-  document.getElementById('googleLogin').addEventListener('click', async () => {
-    adminFeedback.textContent = 'Menghubungkan ke Google...';
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname }
-    });
-    if (error) {
-      console.error(error);
-      adminFeedback.textContent = 'Gagal membuka Google Login. Periksa pengaturan Google Provider di Supabase.';
-    }
-  });
-
-  document.getElementById('adminLogout').addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    adminFeedback.textContent = 'Kamu sudah keluar.';
-    await updateAdminView();
-  });
-
-  document.getElementById('refreshQuestions').addEventListener('click', loadQuestions);
-  supabase.auth.onAuthStateChange(() => updateAdminView());
-  updateAdminView();
+const supabase = createClient('https://xqqmilgtikmpgkdbfasz.supabase.co','sb_publishable_hachrI0w1Kk2r8glkjMoUg_bz2fJtXF');
+const form=document.getElementById('questionForm'), feedback=document.getElementById('questionFeedback'), button=document.getElementById('sendQuestion'), answers=document.getElementById('publicAnswers');
+async function loadAnswers(){
+ const {data,error}=await supabase.from('pc_questions').select('id,name,category,question,answer,answered_at').eq('status','answered').not('answer','is',null).order('answered_at',{ascending:false}).limit(30);
+ answers.replaceChildren(); if(error){answers.textContent='Jawaban belum dapat dimuat.';console.error(error);return;} if(!data?.length){answers.textContent='Belum ada pertanyaan yang dijawab.';return;}
+ for(const q of data){const card=document.createElement('article');card.className='info';card.style.marginBottom='12px';const title=document.createElement('strong');title.textContent=`#${q.id} • ${q.category} • ${q.name||'Pengunjung'}`;const question=document.createElement('p');question.style.cssText='white-space:pre-wrap;margin:10px 0;color:var(--text)';question.textContent='Pertanyaan: '+q.question;const answer=document.createElement('p');answer.style.cssText='white-space:pre-wrap;margin:10px 0;color:var(--green)';answer.textContent='Jawaban admin: '+q.answer;const date=document.createElement('small');date.style.color='var(--muted)';date.textContent=q.answered_at?new Date(q.answered_at).toLocaleString('id-ID'):'';card.append(title,question,answer,date);answers.append(card);}
 }
+form.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const name = document.getElementById('questionName').value.trim();
+  const category = document.getElementById('questionCategory').value;
+  const question = document.getElementById('questionText').value.trim();
+
+  feedback.textContent = 'Mengirim...';
+  button.disabled = true;
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, category, question }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal mengirim.');
+    feedback.textContent = 'Pertanyaan terkirim. Terima kasih!';
+    form.reset();
+  } catch (err) {
+    feedback.textContent = err.message;
+  } finally {
+    button.disabled = false;
+  }
+  loadAnswers();
+});
 </script>
 
 </body>
