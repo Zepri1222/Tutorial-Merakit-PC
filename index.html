@@ -198,10 +198,61 @@ sections.forEach(s=>observer.observe(s));
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const supabase = createClient('https://xqqmilgtikmpgkdbfasz.supabase.co','sb_publishable_hachrI0w1Kk2r8glkjMoUg_bz2fJtXF');
 const form=document.getElementById('questionForm'), feedback=document.getElementById('questionFeedback'), button=document.getElementById('sendQuestion'), answers=document.getElementById('publicAnswers');
-async function loadAnswers(){
- const {data,error}=await supabase.from('pc_questions').select('id,name,category,question,answer,answered_at').eq('status','answered').not('answer','is',null).order('answered_at',{ascending:false}).limit(30);
- answers.replaceChildren(); if(error){answers.textContent='Jawaban belum dapat dimuat.';console.error(error);return;} if(!data?.length){answers.textContent='Belum ada pertanyaan yang dijawab.';return;}
- for(const q of data){const card=document.createElement('article');card.className='info';card.style.marginBottom='12px';const title=document.createElement('strong');title.textContent=`#${q.id} • ${q.category} • ${q.name||'Pengunjung'}`;const question=document.createElement('p');question.style.cssText='white-space:pre-wrap;margin:10px 0;color:var(--text)';question.textContent='Pertanyaan: '+q.question;const answer=document.createElement('p');answer.style.cssText='white-space:pre-wrap;margin:10px 0;color:var(--green)';answer.textContent='Jawaban admin: '+q.answer;const date=document.createElement('small');date.style.color='var(--muted)';date.textContent=q.answered_at?new Date(q.answered_at).toLocaleString('id-ID'):'';card.append(title,question,answer,date);answers.append(card);}
+function getVisitorToken() {
+  let token = localStorage.getItem('pc_visitor_token');
+  if (!token) {
+    token = crypto.randomUUID();
+    localStorage.setItem('pc_visitor_token', token);
+  }
+  return token;
+}
+
+async function loadAnswers() {
+  const box = document.getElementById('answers');
+  box.replaceChildren();
+
+  let items = [];
+  try {
+    const res = await fetch('/api/answers', {
+      headers: { 'x-visitor-token': getVisitorToken() },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal memuat.');
+    items = data.items || [];
+  } catch (err) {
+    console.error(err);
+    box.textContent = 'Jawaban belum dapat dimuat.';
+    return;
+  }
+
+  if (!items.length) {
+    box.textContent = 'Kamu belum punya pertanyaan. Pertanyaan yang kamu kirim dari browser ini akan muncul di sini.';
+    return;
+  }
+
+  for (const q of items) {
+    const card = document.createElement('article');
+    card.className = 'info';
+    card.style.marginBottom = '12px';
+
+    const title = document.createElement('strong');
+    title.textContent = `#${q.id} • ${q.category}`;
+
+    const question = document.createElement('p');
+    question.textContent = `Pertanyaanmu: ${q.question}`;
+
+    const answer = document.createElement('p');
+    if (q.answer) {
+      answer.textContent = `Jawaban admin: ${q.answer}`;
+      answer.style.color = '#7ddca0';
+    } else {
+      answer.textContent = 'Menunggu jawaban admin.';
+      answer.style.color = '#9fb3a8';
+    }
+
+    card.append(title, question, answer);
+    box.append(card);
+  }
 }
 form.addEventListener('submit', async (ev) => {
   ev.preventDefault();
